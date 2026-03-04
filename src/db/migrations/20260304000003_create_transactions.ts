@@ -23,6 +23,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('status', 20).notNullable().defaultTo('COMMITTED');
     table
       .enu('data_flag', ['PROVISIONAL', 'AUTHORITATIVE'], {
+        useNative: true,
         existingType: true,
         enumName: 'data_flag',
       })
@@ -58,6 +59,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('cost_centre', 100).nullable();
     table
       .enu('data_flag', ['PROVISIONAL', 'AUTHORITATIVE'], {
+        useNative: true,
         existingType: true,
         enumName: 'data_flag',
       })

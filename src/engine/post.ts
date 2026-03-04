@@ -184,6 +184,125 @@ export async function postTransaction(
 }
 
 // ---------------------------------------------------------------------------
+// commitStagedTransaction — approve and commit a PENDING staging entry
+// ---------------------------------------------------------------------------
+
+/**
+ * Commits a staged transaction that has been manually approved.
+ *
+ * Reads the stored chain payload from the staging table (which already
+ * contains the fully-expanded lines), writes it to the chain file, mirrors
+ * it to the DB, and marks the staging entry APPROVED.
+ */
+export async function commitStagedTransaction(
+  stagingId: string,
+  approvedBy: string,
+  chainWriterOverride?: ChainWriter,
+): Promise<CommittedResult> {
+  return db.transaction(async (trx) => {
+    // ── 1. Load the staging entry ─────────────────────────────────────────
+    const stagingRow = await trx('staging')
+      .where('staging_id', stagingId)
+      .first<{
+        staging_id: string;
+        period_id: string;
+        transaction_type: string;
+        reference: string | null;
+        date: string;
+        currency: string;
+        description: string | null;
+        payload: unknown;
+        status: string;
+      }>();
+
+    if (!stagingRow) {
+      throw new Error(`Staging entry ${stagingId} not found`);
+    }
+    if (stagingRow.status !== 'PENDING') {
+      throw new Error(`Staging entry ${stagingId} is ${stagingRow.status}, not PENDING`);
+    }
+
+    const chainPayload =
+      typeof stagingRow.payload === 'string'
+        ? (JSON.parse(stagingRow.payload) as Record<string, unknown>)
+        : (stagingRow.payload as Record<string, unknown>);
+
+    // ── 2. Chain write FIRST ──────────────────────────────────────────────
+    const writer =
+      chainWriterOverride ??
+      new ChainWriter({
+        chainDir: CHAIN_DIR,
+        getPeriodStatus: async (periodId: string) => {
+          const row = await trx('periods')
+            .where('period_id', periodId)
+            .select('status')
+            .first<{ status: string } | undefined>();
+          return (row?.status as 'OPEN' | 'SOFT_CLOSE' | 'HARD_CLOSE' | null) ?? null;
+        },
+      });
+
+    const chainEntry = await writer.appendEntry(
+      stagingRow.period_id,
+      'TRANSACTION',
+      chainPayload,
+      { softCloseOverride: true }, // manual approval implies override authority
+    );
+
+    // ── 3. DB mirror write ────────────────────────────────────────────────
+    const transactionId = await generateTransactionId(trx, stagingRow.period_id);
+
+    await trx('transactions').insert({
+      transaction_id: transactionId,
+      period_id: stagingRow.period_id,
+      transaction_type: stagingRow.transaction_type,
+      reference: stagingRow.reference,
+      date: stagingRow.date,
+      currency: stagingRow.currency,
+      description: stagingRow.description,
+      status: 'COMMITTED',
+      data_flag: 'PROVISIONAL',
+      chain_sequence: chainEntry.sequence,
+      chain_period_id: stagingRow.period_id,
+      chain_verified: false,
+    });
+
+    const rawLines = chainPayload['lines'] as Array<{
+      account_code: string;
+      description: string;
+      debit: number;
+      credit: number;
+      cost_centre?: string;
+    }>;
+
+    await trx('transaction_lines').insert(
+      rawLines.map((line) => ({
+        transaction_id: transactionId,
+        period_id: stagingRow.period_id,
+        account_code: line.account_code,
+        description: line.description,
+        debit: new Decimal(line.debit).toFixed(2),
+        credit: new Decimal(line.credit).toFixed(2),
+        cost_centre: line.cost_centre ?? null,
+        data_flag: 'PROVISIONAL',
+        chain_verified: false,
+      })),
+    );
+
+    // ── 4. Mark staging APPROVED ──────────────────────────────────────────
+    await trx('staging')
+      .where('staging_id', stagingId)
+      .update({ status: 'APPROVED', reviewed_at: new Date().toISOString(), reviewed_by: approvedBy });
+
+    return {
+      status: 'COMMITTED',
+      transaction_id: transactionId,
+      chain_sequence: chainEntry.sequence,
+      period_id: stagingRow.period_id,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
