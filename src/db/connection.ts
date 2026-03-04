@@ -1,3 +1,4 @@
+import pg from 'pg';
 import knex from 'knex';
 import type { Knex } from 'knex';
 
@@ -7,6 +8,11 @@ import type { Knex } from 'knex';
 // In tests, use the 'test' environment by setting NODE_ENV=test.
 // The test database runs on port 5433 (see knexfile.ts).
 // ---------------------------------------------------------------------------
+
+// By default the pg driver returns DATE columns as JavaScript Date objects,
+// which causes string comparisons to break (e.g. 'YYYY-MM-DD' < Date).
+// Set the type parser for DATE (OID 1082) to return the raw string instead.
+pg.types.setTypeParser(1082, (val: string) => val);
 
 const env = process.env['NODE_ENV'] === 'test' ? 'test' : 'development';
 
