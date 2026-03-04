@@ -10,9 +10,9 @@
     "test": "jest",
     "test:unit": "jest --testPathPattern=tests/unit",
     "test:integration": "jest --testPathPattern=tests/integration",
-    "migrate": "knex migrate:latest --knexfile knexfile.ts",
-    "migrate:rollback": "knex migrate:rollback --knexfile knexfile.ts",
-    "seed": "knex seed:run --knexfile knexfile.ts",
+    "migrate": "tsx node_modules/knex/bin/cli.js migrate:latest --knexfile knexfile.ts",
+    "migrate:rollback": "tsx node_modules/knex/bin/cli.js migrate:rollback --knexfile knexfile.ts",
+    "seed": "tsx node_modules/knex/bin/cli.js seed:run --knexfile knexfile.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
