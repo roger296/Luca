@@ -2,18 +2,27 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies first (cached layer)
+# ── Backend dependencies ──────────────────────────────────────────────────────
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci
 
-# Copy source code
+# ── Frontend dependencies ─────────────────────────────────────────────────────
+COPY src/web/package.json src/web/package-lock.json* ./src/web/
+RUN npm ci --prefix src/web
+
+# ── Copy all source code ──────────────────────────────────────────────────────
 COPY . .
 
-# Build TypeScript
+# ── Build React frontend ──────────────────────────────────────────────────────
+RUN npm run build --prefix src/web
+
+# ── Compile TypeScript backend ────────────────────────────────────────────────
 RUN npm run build
 
-# Expose the API port
+# ── Ensure chain directory exists ─────────────────────────────────────────────
+RUN mkdir -p /data/chains
+
 EXPOSE 3000
 
-# Run migrations and start the server
+# Run migrations (idempotent), seed data (idempotent), then start server
 CMD ["sh", "-c", "npm run migrate && npm run seed && node dist/server.js"]

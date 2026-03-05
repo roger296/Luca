@@ -20,6 +20,19 @@ const config: Record<string, Knex.Config> = {
     },
   },
 
+  production: {
+    client: 'pg',
+    connection: process.env.DATABASE_URL,
+    migrations: {
+      directory: './src/db/migrations',
+      extension: 'ts',
+    },
+    seeds: {
+      directory: './src/db/seeds',
+      extension: 'ts',
+    },
+  },
+
   test: {
     client: 'pg',
     connection: process.env.TEST_DATABASE_URL || {

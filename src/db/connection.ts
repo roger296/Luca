@@ -14,7 +14,7 @@ import type { Knex } from 'knex';
 // Set the type parser for DATE (OID 1082) to return the raw string instead.
 pg.types.setTypeParser(1082, (val: string) => val);
 
-const env = process.env['NODE_ENV'] === 'test' ? 'test' : 'development';
+const env = process.env['NODE_ENV'];
 
 const connectionConfig: Knex.Config =
   env === 'test'
