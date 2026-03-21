@@ -1,8 +1,12 @@
 import type { Knex } from "knex";
+import bcrypt from "bcrypt";
 
 // Seed file — populates all reference data for a single-tenant GL instance.
 // Idempotent: uses onConflict().ignore() throughout (except approval_rules which has no
 // natural unique key and is wiped + re-inserted on every run).
+//
+// Default admin login:  admin@gl.local / admin1234
+// Change the password immediately after first login.
 
 const CURRENT_PERIOD = "2026-03";
 
@@ -256,4 +260,19 @@ export async function seed(knex: Knex): Promise<void> {
     allowed_transaction_types: ALL_TRANSACTION_TYPES,
     is_active: true,
   }).onConflict("module_id").ignore();
+
+  // 7. Default admin user (idempotent — only inserted if email not already present)
+  //    Login: admin@gl.local / admin1234
+  //    Change the password after first login.
+  const existingAdmin = await knex("users").where({ email: "admin@gl.local" }).first();
+  if (!existingAdmin) {
+    const passwordHash = await bcrypt.hash("admin1234", 10);
+    await knex("users").insert({
+      email: "admin@gl.local",
+      password_hash: passwordHash,
+      display_name: "Administrator",
+      roles: ["admin", "approver", "viewer"],
+      is_active: true,
+    });
+  }
 }
