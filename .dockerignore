@@ -1,0 +1,29 @@
+# Dependencies - never copy local node_modules into Docker
+node_modules
+src/web/node_modules
+
+# Compiled output - rebuilt inside Docker
+dist
+src/web/dist
+
+# Test artefacts
+chains
+coverage
+
+# VCS / IDE
+.git
+.gitignore
+*.md
+
+# Environment files
+.env
+.env.*
+
+# Test files (not needed in the image)
+tests
+jest.config.js
+tsconfig.test.json
+
+# Dev config
+.eslintrc*
+.prettierrc*
