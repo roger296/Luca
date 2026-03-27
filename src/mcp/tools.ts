@@ -67,6 +67,11 @@ export const postTransactionSchema = {
     submitted_by: z.string().optional(),
     confidence_score: z.number().optional(),
   }).optional(),
+  supporting_document: z.object({
+    filename: z.string().describe("Original filename, e.g. 'invoice-001.pdf'"),
+    mime_type: z.string().describe("MIME type, e.g. 'application/pdf' or 'image/jpeg'"),
+    file_data: z.string().describe("Base64-encoded file content"),
+  }).optional().describe("Optional supporting document to attach to this transaction"),
 };
 
 export async function handlePostTransaction(
@@ -89,6 +94,7 @@ export async function handlePostTransaction(
     }>;
     idempotency_key: string;
     approval_context?: { submitted_by?: string; confidence_score?: number };
+    supporting_document?: { filename: string; mime_type: string; file_data: string };
   },
   context: McpContext
 ): Promise<ToolResult> {
@@ -115,6 +121,17 @@ export async function handlePostTransaction(
       idempotency_key: args.idempotency_key,
       approval_context: args.approval_context?.submitted_by ? { submitted_by: args.approval_context.submitted_by } : undefined,
     });
+    if (args.supporting_document && result.status === "POSTED" && result.transaction_id) {
+      const { insertDocument } = await import("../db/queries/documents");
+      await insertDocument({
+        transaction_id: result.transaction_id,
+        filename: args.supporting_document.filename,
+        mime_type: args.supporting_document.mime_type,
+        file_data: args.supporting_document.file_data,
+        file_size: Buffer.from(args.supporting_document.file_data, "base64").byteLength,
+        uploaded_by: "mcp-agent",
+      });
+    }
     return ok(result);
   } catch (e) { return wrapError(e); }
 }
