@@ -1,0 +1,17 @@
+[
+  {
+    "client_id": "c194049b-1b88-45e1-bd62-df98d42e3bdb",
+    "client_secret": "c78c2ade-249d-4c9b-9dbf-a521cfcba89a",
+    "client_name": "Cowork",
+    "redirect_uris": [],
+    "grant_types": [
+      "authorization_code",
+      "refresh_token"
+    ],
+    "response_types": [
+      "code"
+    ],
+    "token_endpoint_auth_method": "client_secret_basic",
+    "registered_at": "2026-03-24T09:04:40.322Z"
+  }
+]

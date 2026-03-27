@@ -34,7 +34,11 @@ async function main() {
   });
 }
 
-main().catch((err) => {
-  console.error("MCP server failed to start:", err);
-  process.exit(1);
-});
+// Only run the stdio server when this file is executed directly.
+// When imported by server-http.ts to get createMcpServer, we must not start stdio.
+if (require.main === module) {
+  main().catch((err) => {
+    console.error("MCP server failed to start:", err);
+    process.exit(1);
+  });
+}

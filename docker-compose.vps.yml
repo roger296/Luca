@@ -1,0 +1,92 @@
+# docker-compose.vps.yml
+# Production VPS deployment — run with:
+#
+#   docker compose -f docker-compose.vps.yml --env-file deploy/.env up -d
+#
+# Prerequisites:
+#   - Copy deploy/.env.example to deploy/.env and fill in all values
+#   - Nginx + Certbot already configured on the host (see deploy/VPS_DEPLOYMENT.md)
+#
+# Architecture:
+#   db    — PostgreSQL 16 (internal only, not exposed to host)
+#   api   — GL web app + REST API  (port 127.0.0.1:3000, proxied by nginx)
+#   mcp   — MCP HTTP server        (port 127.0.0.1:3002, proxied by nginx)
+#
+# Nginx on the host handles TLS termination and proxies to both services.
+# The MCP server runs in plain HTTP mode (MCP_TLS_DISABLE=true).
+
+version: '3.8'
+
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: gl-v1-db
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-gl_ledger}
+      POSTGRES_USER:     ${DB_USER:-gl_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required in deploy/.env}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test:     ["CMD-SHELL", "pg_isready -U ${DB_USER:-gl_admin} -d ${DB_NAME:-gl_ledger}"]
+      interval: 5s
+      timeout:  5s
+      retries:  5
+    restart: unless-stopped
+
+  # ── GL web app + REST API ─────────────────────────────────────────────────
+  api:
+    build:
+      context:    .
+      dockerfile: Dockerfile
+    container_name: gl-v1-api
+    environment:
+      NODE_ENV:      production
+      PORT:          3000
+      DATABASE_URL:  postgresql://${DB_USER:-gl_admin}:${DB_PASSWORD}@db:5432/${DB_NAME:-gl_ledger}
+      CHAINS_DIR:    /data/chains
+      JWT_SECRET:    ${JWT_SECRET:?JWT_SECRET is required in deploy/.env}
+      MCP_TENANT_ID: ${MCP_TENANT_ID:-default}
+      MCP_USER_ID:   ${MCP_USER_ID:?MCP_USER_ID is required in deploy/.env}
+    ports:
+      - "127.0.0.1:3000:3000"   # only accessible via nginx on the host
+    volumes:
+      - chains_data:/data/chains
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── MCP HTTP server ───────────────────────────────────────────────────────
+  # Reuses the same Docker image as `api` but starts server-http.js instead.
+  # TLS is disabled — nginx on the host terminates SSL and proxies plain HTTP here.
+  mcp:
+    build:
+      context:    .
+      dockerfile: Dockerfile
+    container_name: gl-v1-mcp
+    command: ["node", "dist/src/mcp/server-http.js"]
+    environment:
+      NODE_ENV:        production
+      MCP_HTTP_PORT:   3002
+      MCP_TLS_DISABLE: "true"
+      DATABASE_URL:    postgresql://${DB_USER:-gl_admin}:${DB_PASSWORD}@db:5432/${DB_NAME:-gl_ledger}
+      CHAINS_DIR:      /data/chains
+      JWT_SECRET:      ${JWT_SECRET}
+      MCP_USER_ID:     ${MCP_USER_ID}
+    ports:
+      - "127.0.0.1:3002:3002"   # only accessible via nginx on the host
+    volumes:
+      - chains_data:/data/chains
+      - oauth_data:/app/data     # persists oauth-clients.json across restarts
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  chains_data:
+  oauth_data:

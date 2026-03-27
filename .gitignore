@@ -11,3 +11,7 @@ chains/
 # Build output for frontend
 src/web/dist/
 src/web/node_modules/
+
+# VPS deployment secrets
+deploy/.env
+certs/

@@ -40,6 +40,9 @@ COPY startup.js ./
 # Chain files directory (mount as volume in production)
 RUN mkdir -p /data/chains && chown -R node:node /data/chains
 
+# OAuth client store — written by the MCP server, must be writable by the node user
+RUN mkdir -p /app/data && chown -R node:node /app/data
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV CHAINS_DIR=/data/chains

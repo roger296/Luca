@@ -36,7 +36,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - chain_data:/data/chains
+      - ./data/chains:/data/chains   # bind mount so the MCP server (running on Windows) can share the same chain files
     depends_on:
       db:
         condition: service_healthy
@@ -60,4 +60,6 @@ services:
 
 volumes:
   pg_data:
-  chain_data:
+  # chain_data volume removed — chains now use a bind mount (./data/chains) so the
+  # MCP server process running on Windows can read and write the same chain files
+  # as the Docker API container. The folder is created automatically on first run.
