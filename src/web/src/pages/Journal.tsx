@@ -2,6 +2,8 @@ import { useState, useCallback, useMemo } from "react";
 import { useTransactions } from "../hooks/useTransactions";
 import { fmtMoney, fmtDate, shortHash } from "../lib/api";
 import { PeriodSelector } from "../components/PeriodSelector";
+import { SupportingDocModal } from "../components/SupportingDocModal";
+import { useTransactionDocuments } from "../hooks/useTransactionDocuments";
 import type { Transaction } from "../types/api";
 
 const TX_TYPES = [
@@ -52,12 +54,34 @@ const EMPTY_FILTERS: Filters = {
   reference: "",
 };
 
+function SupportingDocButton({
+  transactionId,
+  onClick,
+}: {
+  transactionId: string;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const { data: docs, isLoading } = useTransactionDocuments(transactionId);
+  if (isLoading) return <span style={{ fontSize: 11, color: "var(--text)" }}>…</span>;
+  if (!docs || docs.length === 0) return <span style={{ fontSize: 11, color: "var(--text)" }}>None attached</span>;
+  return (
+    <button
+      className="btn btn-primary btn-sm"
+      style={{ fontSize: 12 }}
+      onClick={onClick}
+    >
+      View Supporting Doc
+    </button>
+  );
+}
+
 export function Journal() {
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [docModalTxnId, setDocModalTxnId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useTransactions({ ...applied, page, page_size: PAGE_SIZE });
 
@@ -305,6 +329,16 @@ export function Journal() {
                                       <div style={{ fontSize: 13 }}>{txn.source_module}</div>
                                     </div>
                                   )}
+                                  <div>
+                                    <div className="muted" style={{ fontSize: 11, marginBottom: 2 }}>Supporting Document</div>
+                                    <SupportingDocButton
+                                      transactionId={txn.transaction_id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDocModalTxnId(txn.transaction_id);
+                                      }}
+                                    />
+                                  </div>
                                 </div>
 
                                 {txn.lines && txn.lines.length > 0 && (
@@ -380,6 +414,13 @@ export function Journal() {
           </>
         )}
       </div>
+
+      {docModalTxnId && (
+        <SupportingDocModal
+          transactionId={docModalTxnId}
+          onClose={() => setDocModalTxnId(null)}
+        />
+      )}
     </div>
   );
 }

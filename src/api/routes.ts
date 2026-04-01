@@ -12,6 +12,7 @@ import * as exchangeRates from "./exchange-rates";
 import * as modulesApi from "./modules";
 import * as delegationsApi from "./delegations";
 import * as reconciliations from "./reconciliations";
+import * as documents from "./documents";
 
 const router = Router();
 
@@ -23,6 +24,12 @@ router.post("/transactions/bulk", transactions.submitBulkTransactions);
 router.post("/transactions", transactions.submitTransaction);
 router.get("/transactions", transactions.getTransactions);
 router.get("/transactions/:id", transactions.getTransactionById);
+
+// ─── Transaction Documents ─────────────────────────────────────────────────
+router.get("/transactions/:id/documents", documents.listDocuments);
+router.post("/transactions/:id/documents", documents.uploadDocument);
+router.get("/transactions/:id/documents/:doc_id/file", documents.serveDocument);
+router.delete("/transactions/:id/documents/:doc_id", documents.deleteDocument);
 
 // ─── Accounts ──────────────────────────────────────────────────────────────
 router.get("/accounts", accounts.listAccounts);
