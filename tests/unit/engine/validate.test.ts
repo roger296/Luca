@@ -121,6 +121,166 @@ describe('validateSubmission', () => {
       }),
     ).toThrow(ValidationError);
   });
+
+  // ── CUSTOMER_CREDIT_NOTE ──────────────────────────────────────────────────
+
+  it('accepts a valid CUSTOMER_CREDIT_NOTE with amount', () => {
+    expect(() =>
+      validateSubmission({ transaction_type: 'CUSTOMER_CREDIT_NOTE', date: '2026-03-15', period_id: '2026-03', amount: 1200 }),
+    ).not.toThrow();
+  });
+
+  it('rejects CUSTOMER_CREDIT_NOTE with explicit lines', () => {
+    expect(() =>
+      validateSubmission({
+        transaction_type: 'CUSTOMER_CREDIT_NOTE',
+        date: '2026-03-15',
+        period_id: '2026-03',
+        amount: 1200,
+        lines: [{ account_code: '1100', debit: 0, credit: 1200 }],
+      }),
+    ).toThrow(ValidationError);
+  });
+
+  // ── SUPPLIER_CREDIT_NOTE ──────────────────────────────────────────────────
+
+  it('accepts a valid SUPPLIER_CREDIT_NOTE with amount', () => {
+    expect(() =>
+      validateSubmission({ transaction_type: 'SUPPLIER_CREDIT_NOTE', date: '2026-03-15', period_id: '2026-03', amount: 600 }),
+    ).not.toThrow();
+  });
+
+  it('rejects SUPPLIER_CREDIT_NOTE with explicit lines', () => {
+    expect(() =>
+      validateSubmission({
+        transaction_type: 'SUPPLIER_CREDIT_NOTE',
+        date: '2026-03-15',
+        period_id: '2026-03',
+        amount: 600,
+        lines: [{ account_code: '2000', debit: 600, credit: 0 }],
+      }),
+    ).toThrow(ValidationError);
+  });
+
+  // ── BAD_DEBT_WRITE_OFF ────────────────────────────────────────────────────
+
+  it('accepts a valid BAD_DEBT_WRITE_OFF with amount', () => {
+    expect(() =>
+      validateSubmission({ transaction_type: 'BAD_DEBT_WRITE_OFF', date: '2026-03-15', period_id: '2026-03', amount: 500 }),
+    ).not.toThrow();
+  });
+
+  it('rejects BAD_DEBT_WRITE_OFF with explicit lines', () => {
+    expect(() =>
+      validateSubmission({
+        transaction_type: 'BAD_DEBT_WRITE_OFF',
+        date: '2026-03-15',
+        period_id: '2026-03',
+        amount: 500,
+        lines: [{ account_code: '6700', debit: 500, credit: 0 }],
+      }),
+    ).toThrow(ValidationError);
+  });
+
+  // ── BANK_RECEIPT ──────────────────────────────────────────────────────────
+
+  it('accepts a valid BANK_RECEIPT with amount', () => {
+    expect(() =>
+      validateSubmission({ transaction_type: 'BANK_RECEIPT', date: '2026-03-15', period_id: '2026-03', amount: 250 }),
+    ).not.toThrow();
+  });
+
+  it('rejects BANK_RECEIPT with explicit lines', () => {
+    expect(() =>
+      validateSubmission({
+        transaction_type: 'BANK_RECEIPT',
+        date: '2026-03-15',
+        period_id: '2026-03',
+        amount: 250,
+        lines: [{ account_code: '1000', debit: 250, credit: 0 }],
+      }),
+    ).toThrow(ValidationError);
+  });
+
+  // ── BANK_PAYMENT ──────────────────────────────────────────────────────────
+
+  it('accepts a valid BANK_PAYMENT with amount', () => {
+    expect(() =>
+      validateSubmission({ transaction_type: 'BANK_PAYMENT', date: '2026-03-15', period_id: '2026-03', amount: 75 }),
+    ).not.toThrow();
+  });
+
+  it('rejects BANK_PAYMENT with explicit lines', () => {
+    expect(() =>
+      validateSubmission({
+        transaction_type: 'BANK_PAYMENT',
+        date: '2026-03-15',
+        period_id: '2026-03',
+        amount: 75,
+        lines: [{ account_code: '6200', debit: 75, credit: 0 }],
+      }),
+    ).toThrow(ValidationError);
+  });
+
+  // ── BANK_TRANSFER ─────────────────────────────────────────────────────────
+
+  it('accepts a valid BANK_TRANSFER with amount', () => {
+    expect(() =>
+      validateSubmission({ transaction_type: 'BANK_TRANSFER', date: '2026-03-15', period_id: '2026-03', amount: 5000 }),
+    ).not.toThrow();
+  });
+
+  it('rejects BANK_TRANSFER with explicit lines', () => {
+    expect(() =>
+      validateSubmission({
+        transaction_type: 'BANK_TRANSFER',
+        date: '2026-03-15',
+        period_id: '2026-03',
+        amount: 5000,
+        lines: [{ account_code: '1010', debit: 5000, credit: 0 }],
+      }),
+    ).toThrow(ValidationError);
+  });
+
+  // ── PERIOD_END_ACCRUAL ────────────────────────────────────────────────────
+
+  it('accepts a valid PERIOD_END_ACCRUAL with amount', () => {
+    expect(() =>
+      validateSubmission({ transaction_type: 'PERIOD_END_ACCRUAL', date: '2026-03-31', period_id: '2026-03', amount: 1500 }),
+    ).not.toThrow();
+  });
+
+  it('rejects PERIOD_END_ACCRUAL with explicit lines', () => {
+    expect(() =>
+      validateSubmission({
+        transaction_type: 'PERIOD_END_ACCRUAL',
+        date: '2026-03-31',
+        period_id: '2026-03',
+        amount: 1500,
+        lines: [{ account_code: '5000', debit: 1500, credit: 0 }],
+      }),
+    ).toThrow(ValidationError);
+  });
+
+  // ── DEPRECIATION ──────────────────────────────────────────────────────────
+
+  it('accepts a valid DEPRECIATION with amount', () => {
+    expect(() =>
+      validateSubmission({ transaction_type: 'DEPRECIATION', date: '2026-03-31', period_id: '2026-03', amount: 800 }),
+    ).not.toThrow();
+  });
+
+  it('rejects DEPRECIATION with explicit lines', () => {
+    expect(() =>
+      validateSubmission({
+        transaction_type: 'DEPRECIATION',
+        date: '2026-03-31',
+        period_id: '2026-03',
+        amount: 800,
+        lines: [{ account_code: '6600', debit: 800, credit: 0 }],
+      }),
+    ).toThrow(ValidationError);
+  });
 });
 
 // ---------------------------------------------------------------------------

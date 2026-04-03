@@ -7,9 +7,18 @@ import type { Knex } from 'knex';
 export type TransactionType =
   | 'MANUAL_JOURNAL'
   | 'CUSTOMER_INVOICE'
+  | 'CUSTOMER_CREDIT_NOTE'
   | 'SUPPLIER_INVOICE'
+  | 'SUPPLIER_CREDIT_NOTE'
   | 'CUSTOMER_PAYMENT'
   | 'SUPPLIER_PAYMENT'
+  | 'BAD_DEBT_WRITE_OFF'
+  | 'BANK_RECEIPT'
+  | 'BANK_PAYMENT'
+  | 'BANK_TRANSFER'
+  | 'PERIOD_END_ACCRUAL'
+  | 'DEPRECIATION'
+  | 'YEAR_END_CLOSE'
   | 'PRIOR_PERIOD_ADJUSTMENT';
 
 /** A single debit/credit line provided by the caller (MANUAL_JOURNAL / PRIOR_PERIOD_ADJUSTMENT). */

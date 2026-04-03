@@ -7,14 +7,26 @@ import { ValidationError } from './types';
 // ---------------------------------------------------------------------------
 
 /** Types that require the caller to supply explicit debit/credit lines. */
-const EXPLICIT_LINE_TYPES = new Set<string>(['MANUAL_JOURNAL', 'PRIOR_PERIOD_ADJUSTMENT']);
+const EXPLICIT_LINE_TYPES = new Set<string>([
+  'MANUAL_JOURNAL',
+  'PRIOR_PERIOD_ADJUSTMENT',
+  'YEAR_END_CLOSE',
+]);
 
 /** Types that are expanded from account mappings + a single `amount`. */
 const AMOUNT_BASED_TYPES = new Set<string>([
   'CUSTOMER_INVOICE',
+  'CUSTOMER_CREDIT_NOTE',
   'SUPPLIER_INVOICE',
+  'SUPPLIER_CREDIT_NOTE',
   'CUSTOMER_PAYMENT',
   'SUPPLIER_PAYMENT',
+  'BAD_DEBT_WRITE_OFF',
+  'BANK_RECEIPT',
+  'BANK_PAYMENT',
+  'BANK_TRANSFER',
+  'PERIOD_END_ACCRUAL',
+  'DEPRECIATION',
 ]);
 
 /**

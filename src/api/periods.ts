@@ -4,6 +4,7 @@ import { ChainWriter } from '../chain/writer';
 import { config } from '../config';
 import { db } from '../db/connection';
 import { hardClosePeriod, softClosePeriod } from '../engine/periods';
+import { executeYearEndClose } from '../engine/year-end';
 
 // ---------------------------------------------------------------------------
 // periods.ts — Period management endpoints
@@ -109,6 +110,27 @@ periodsRouter.post('/:id/hard-close', async (req: Request, res: Response, next: 
       closedBy,
       chainWriter: makeChainWriter(),
     });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** POST /api/periods/year-end-close */
+periodsRouter.post('/year-end-close', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { financial_year_end, new_year_first_period } = req.body as {
+      financial_year_end: string;
+      new_year_first_period: string;
+    };
+    if (!financial_year_end || !new_year_first_period) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'MISSING_PARAM', message: 'financial_year_end and new_year_first_period are required' },
+      });
+      return;
+    }
+    const result = await executeYearEndClose(financial_year_end, new_year_first_period);
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);

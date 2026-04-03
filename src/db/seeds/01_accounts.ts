@@ -11,13 +11,17 @@ interface AccountRow {
 const accounts: AccountRow[] = [
   // --- ASSETS ---
   { code: '1000', name: 'Bank Current Account', type: 'ASSET', category: 'CURRENT_ASSET', active: true },
+  { code: '1010', name: 'Bank Deposit Account', type: 'ASSET', category: 'CURRENT_ASSET', active: true },
   { code: '1100', name: 'Trade Debtors', type: 'ASSET', category: 'CURRENT_ASSET', active: true },
   { code: '1200', name: 'VAT Input (Recoverable)', type: 'ASSET', category: 'CURRENT_ASSET', active: true },
+  { code: '1300', name: 'Fixed Assets — Cost', type: 'ASSET', category: 'FIXED_ASSET', active: true },
+  { code: '1310', name: 'Fixed Assets — Accumulated Depreciation', type: 'ASSET', category: 'FIXED_ASSET', active: true },
 
   // --- LIABILITIES ---
   { code: '2000', name: 'Trade Creditors', type: 'LIABILITY', category: 'CURRENT_LIABILITY', active: true },
   { code: '2100', name: 'VAT Output', type: 'LIABILITY', category: 'CURRENT_LIABILITY', active: true },
   { code: '2200', name: 'PAYE/NI Payable', type: 'LIABILITY', category: 'CURRENT_LIABILITY', active: true },
+  { code: '2300', name: 'Accruals', type: 'LIABILITY', category: 'CURRENT_LIABILITY', active: true },
 
   // --- EQUITY ---
   { code: '3000', name: 'Share Capital', type: 'EQUITY', category: null, active: true },
@@ -39,6 +43,7 @@ const accounts: AccountRow[] = [
   { code: '6400', name: 'Travel and Subsistence', type: 'EXPENSE', category: 'OVERHEADS', active: true },
   { code: '6500', name: 'Marketing and Advertising', type: 'EXPENSE', category: 'OVERHEADS', active: true },
   { code: '6600', name: 'Depreciation', type: 'EXPENSE', category: 'OVERHEADS', active: true },
+  { code: '6700', name: 'Bad Debts Written Off', type: 'EXPENSE', category: 'OVERHEADS', active: true },
 
   // --- REVENUE: Other income ---
   { code: '7000', name: 'Bank Interest Received', type: 'REVENUE', category: 'OTHER_INCOME', active: true },

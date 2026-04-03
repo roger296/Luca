@@ -79,7 +79,10 @@ export function expandToPostingLines(
   const { transaction_type } = submission;
 
   const isVatBearing =
-    transaction_type === 'CUSTOMER_INVOICE' || transaction_type === 'SUPPLIER_INVOICE';
+    transaction_type === 'CUSTOMER_INVOICE' ||
+    transaction_type === 'SUPPLIER_INVOICE' ||
+    transaction_type === 'CUSTOMER_CREDIT_NOTE' ||
+    transaction_type === 'SUPPLIER_CREDIT_NOTE';
 
   const { net, vat } = isVatBearing
     ? splitGrossAmount(grossAmount)

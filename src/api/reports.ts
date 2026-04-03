@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
 import { db } from '../db/connection';
+import { getAgedCreditors, getAgedDebtors, getBalanceSheet, getProfitAndLoss, getVatReturn } from '../engine/reports';
 
 // ---------------------------------------------------------------------------
 // reports.ts — Trial balance and dashboard stats endpoints
@@ -56,6 +57,69 @@ reportsRouter.get('/trial-balance', async (req: Request, res: Response, next: Ne
         balanced: Math.abs(totalDebits - totalCredits) < 0.005,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/reports/profit-and-loss?period_id=YYYY-MM&from_date=&to_date= */
+reportsRouter.get('/profit-and-loss', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { period_id, from_date, to_date } = req.query as Record<string, string | undefined>;
+    if (!period_id) {
+      res.status(400).json({ success: false, error: { code: 'MISSING_PARAM', message: 'period_id is required' } });
+      return;
+    }
+    const data = await getProfitAndLoss({ period_id, from_date, to_date });
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/reports/balance-sheet?period_id=YYYY-MM or ?as_at_date=YYYY-MM-DD */
+reportsRouter.get('/balance-sheet', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { period_id, as_at_date } = req.query as Record<string, string | undefined>;
+    const data = await getBalanceSheet({ period_id, as_at_date });
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/reports/aged-debtors?as_at_date=YYYY-MM-DD */
+reportsRouter.get('/aged-debtors', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { as_at_date } = req.query as Record<string, string | undefined>;
+    const data = await getAgedDebtors({ as_at_date });
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/reports/aged-creditors?as_at_date=YYYY-MM-DD */
+reportsRouter.get('/aged-creditors', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { as_at_date } = req.query as Record<string, string | undefined>;
+    const data = await getAgedCreditors({ as_at_date });
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/reports/vat-return?quarter_end=YYYY-MM */
+reportsRouter.get('/vat-return', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { quarter_end } = req.query as Record<string, string | undefined>;
+    if (!quarter_end) {
+      res.status(400).json({ success: false, error: { code: 'MISSING_PARAM', message: 'quarter_end is required' } });
+      return;
+    }
+    const data = await getVatReturn({ quarter_end });
+    res.json({ success: true, data });
   } catch (err) {
     next(err);
   }
