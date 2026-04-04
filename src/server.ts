@@ -7,7 +7,10 @@ import fs from 'node:fs/promises';
 import { ChainWriter } from './chain/writer';
 import { ChainFileExistsError } from './chain/types';
 import { apiRouter } from './api/routes';
+import oauthRouter, { registerOAuthDiscovery } from './api/oauth';
+import { createMcpRouter } from './mcp/server';
 import { errorHandler } from './api/middleware/errors';
+import { requestIdMiddleware } from './api/middleware/request-id';
 import { config } from './config';
 import { db } from './db/connection';
 
@@ -65,6 +68,9 @@ async function bootstrapChainFiles(): Promise<void> {
 
 const app = express();
 
+// ── Request ID (must be first) ────────────────────────────────────────────────
+app.use(requestIdMiddleware);
+
 // ── Security and parsing middleware ─────────────────────────────────────────
 app.use(
   helmet({
@@ -79,16 +85,55 @@ app.use(
   }),
 );
 app.use(cors());
-app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
+app.use(morgan(config.env === 'production' ? 'combined' : 'dev'));
 app.use(express.json());
 
-// ── API routes ───────────────────────────────────────────────────────────────
-app.use('/api', apiRouter);
+// ── OAuth discovery (no auth required — must be before apiRouter) ────────────
+registerOAuthDiscovery(app, config.baseUrl);
 
-// ── Health check ─────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', env: config.nodeEnv });
+// ── OAuth 2.0 endpoints (public — no JWT required) ───────────────────────────
+app.use('/oauth', oauthRouter);
+
+// ── MCP endpoint (Bearer-token auth handled inside the router) ────────────────
+app.use('/mcp', createMcpRouter());
+
+// ── Health check (no auth required — registered BEFORE apiRouter) ────────────
+const serverStartTime = Date.now();
+
+app.get('/api/health', async (_req, res) => {
+  const uptime = Math.floor((Date.now() - serverStartTime) / 1000);
+
+  // Test DB connectivity.
+  let dbStatus = 'connected';
+  try {
+    await db.raw('SELECT 1');
+  } catch {
+    dbStatus = 'disconnected';
+  }
+
+  // Test chain directory is accessible and writable.
+  let chainDirWritable = false;
+  try {
+    await fs.access(config.chainDir, fs.constants.W_OK);
+    chainDirWritable = true;
+  } catch {
+    chainDirWritable = false;
+  }
+
+  const status = dbStatus === 'connected' && chainDirWritable ? 'healthy' : 'degraded';
+
+  res.status(status === 'healthy' ? 200 : 503).json({
+    status,
+    database: dbStatus,
+    chain_dir: config.chainDir,
+    chain_dir_writable: chainDirWritable,
+    version: '1.0.0',
+    uptime_seconds: uptime,
+  });
 });
+
+// ── API routes (includes /api/oauth-clients — see routes.ts) ─────────────────
+app.use('/api', apiRouter);
 
 // ── Serve React frontend (static build) ──────────────────────────────────────
 // In production/Docker the frontend is pre-built into src/web/dist.
@@ -105,16 +150,18 @@ app.get('*', (_req, res) => {
 // ── Error handler (must be last) ─────────────────────────────────────────────
 app.use(errorHandler);
 
-// ── Start server ─────────────────────────────────────────────────────────────
-bootstrapChainFiles()
-  .then(() => {
-    app.listen(config.port, () => {
-      console.log(`GL MVP server running on port ${config.port} [${config.nodeEnv}]`);
+// ── Start server (skip in test mode — supertest binds its own port) ──────────
+if (config.env !== 'test') {
+  bootstrapChainFiles()
+    .then(() => {
+      app.listen(config.port, () => {
+        console.log(`GL MVP server running on port ${config.port} [${config.env}]`);
+      });
+    })
+    .catch((err: unknown) => {
+      console.error('Fatal: chain bootstrap failed:', err);
+      process.exit(1);
     });
-  })
-  .catch((err: unknown) => {
-    console.error('Fatal: chain bootstrap failed:', err);
-    process.exit(1);
-  });
+}
 
 export { app };

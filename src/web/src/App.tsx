@@ -6,6 +6,7 @@ import { ChartOfAccounts } from './pages/ChartOfAccounts';
 import { ApprovalQueue } from './pages/ApprovalQueue';
 import { TrialBalance } from './pages/TrialBalance';
 import { PeriodManagement } from './pages/PeriodManagement';
+import { ConnectClaude } from './pages/ConnectClaude';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/approvals" element={<ApprovalQueue />} />
         <Route path="/trial-balance" element={<TrialBalance />} />
         <Route path="/periods" element={<PeriodManagement />} />
+        <Route path="/connect-claude" element={<ConnectClaude />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
